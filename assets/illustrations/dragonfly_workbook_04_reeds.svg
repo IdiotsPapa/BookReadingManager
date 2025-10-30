@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b9e3ff"/>
+      <stop offset="70%" stop-color="#edf8ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9be28e"/>
+      <stop offset="100%" stop-color="#7bcf78"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a8dcff"/>
+      <stop offset="100%" stop-color="#89c7f4"/>
+    </linearGradient>
+    <linearGradient id="thoraxLime" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bff46b"/>
+      <stop offset="100%" stop-color="#72bd29"/>
+    </linearGradient>
+    <linearGradient id="abdomenLime" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3d6b1e"/>
+      <stop offset="50%" stop-color="#a6f06a"/>
+      <stop offset="100%" stop-color="#3d6b1e"/>
+    </linearGradient>
+    <linearGradient id="wingTint" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#eef6ff" stop-opacity="0.88"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1200" fill="url(#sky)"/>
+  <path d="M0,760 C240,660 360,680 520,760 C720,860 900,820 1100,760 C1280,708 1440,720 1600,760 L1600,1200 L0,1200 Z" fill="url(#hill)"/>
+  <ellipse cx="900" cy="920" rx="420" ry="140" fill="url(#water)" opacity="0.95"/>
+
+  <g filter="url(#softShadow)" transform="translate(120,80)">
+    <rect x="0" y="0" rx="20" ry="20" width="840" height="160" fill="#ffffff"/>
+    <text x="36" y="68" font-size="56" font-weight="700" fill="#2b4c7e" font-family="'Noto Sans KR', 'Pretendard', 'Segoe UI', sans-serif">잠자리 탐험대 워크북 04</text>
+    <text x="36" y="118" font-size="28" fill="#5c748f" font-family="'Noto Sans KR', 'Pretendard', 'Segoe UI', sans-serif">갈대 위에서</text>
+  </g>
+
+  <!-- Reeds foreground -->
+  <g stroke="#4f8a3b" stroke-width="8" stroke-linecap="round">
+    <path d="M220,1040 C230,900 260,840 280,720"/>
+    <path d="M300,1040 C310,900 340,840 360,720"/>
+    <path d="M1240,1040 C1250,900 1280,840 1300,720"/>
+  </g>
+  <g fill="#7d4e24">
+    <ellipse cx="280" cy="710" rx="16" ry="40"/>
+    <ellipse cx="360" cy="730" rx="16" ry="40"/>
+    <ellipse cx="1300" cy="710" rx="16" ry="40"/>
+  </g>
+
+  <!-- Resting dragonfly on reed -->
+  <g stroke-linecap="round" stroke-linejoin="round" transform="translate(360,700) rotate(-10)">
+    <g opacity="0.95" fill="url(#wingTint)" stroke="#cfe3f4" stroke-opacity="0.9">
+      <ellipse cx="-88" cy="-10" rx="110" ry="34"/>
+      <ellipse cx="88" cy="-10" rx="110" ry="34"/>
+      <ellipse cx="-88" cy="10" rx="110" ry="34"/>
+      <ellipse cx="88" cy="10" rx="110" ry="34"/>
+    </g>
+    <ellipse cx="0" cy="0" rx="20" ry="24" fill="url(#thoraxLime)"/>
+    <ellipse cx="0" cy="-26" rx="12" ry="10" fill="#2b2e34"/>
+    <g fill="url(#abdomenLime)" stroke="#1e2d2a" stroke-width="2">
+      <rect x="-6" y="20" width="12" height="22" rx="6"/>
+      <rect x="-6" y="42" width="12" height="22" rx="6"/>
+      <rect x="-5.6" y="64" width="11.2" height="22" rx="6"/>
+      <rect x="-5.2" y="86" width="10.4" height="22" rx="6"/>
+      <rect x="-4.8" y="108" width="9.6" height="22" rx="6"/>
+    </g>
+  </g>
+
+  <!-- Distant flying dragonflies -->
+  <g transform="translate(1100,540) rotate(8)">
+    <g opacity="0.6" fill="#eaf6ff" stroke="#cfe3f4" stroke-width="1.2">
+      <ellipse cx="-60" cy="-8" rx="80" ry="26"/>
+      <ellipse cx="60" cy="-8" rx="80" ry="26"/>
+      <ellipse cx="0" cy="10" rx="80" ry="26"/>
+      <ellipse cx="0" cy="-26" rx="80" ry="26"/>
+    </g>
+  </g>
+</svg>
