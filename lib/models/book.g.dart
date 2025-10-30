@@ -19,26 +19,47 @@ class BookAdapter extends TypeAdapter<Book> {
     return Book(
       title: fields[0] as String,
       author: fields[1] as String,
-      isbn: fields[2] as String?,
-      imageUrl: fields[3] as String?,
-      readDate: fields[4] as DateTime?,
+      description: fields[2] as String,
+      isbn: fields[3] as String?,
+      imageUrl: fields[4] as String?,
+      readDate: fields[5] as DateTime?,
+      ocrText: fields[6] as String?,
+      tags: (fields[7] as List?)?.cast<String>(),
+      googleBookId: fields[8] as String?,
+      note: fields[9] as String?,
+      createdAt: fields[10] as DateTime?,
+      updatedAt: fields[11] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Book obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
       ..write(obj.author)
       ..writeByte(2)
-      ..write(obj.isbn)
+      ..write(obj.description)
       ..writeByte(3)
-      ..write(obj.imageUrl)
+      ..write(obj.isbn)
       ..writeByte(4)
-      ..write(obj.readDate);
+      ..write(obj.imageUrl)
+      ..writeByte(5)
+      ..write(obj.readDate)
+      ..writeByte(6)
+      ..write(obj.ocrText)
+      ..writeByte(7)
+      ..write(obj.tags)
+      ..writeByte(8)
+      ..write(obj.googleBookId)
+      ..writeByte(9)
+      ..write(obj.note)
+      ..writeByte(10)
+      ..write(obj.createdAt)
+      ..writeByte(11)
+      ..write(obj.updatedAt);
   }
 
   @override
