@@ -207,6 +207,9 @@ class _PlanPageState extends State<PlanPage> {
                             )
                             .toList(),
                         onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
                           setSheetState(() {
                             selectedChildId = value;
                           });

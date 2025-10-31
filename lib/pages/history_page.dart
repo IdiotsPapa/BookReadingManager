@@ -358,15 +358,17 @@ class _HistoryCard extends StatelessWidget {
     final readDate = book.readDate != null
         ? DateFormat('yyyy-MM-dd').format(book.readDate!)
         : '날짜 미지정';
+    final childName = child?.name ?? '';
+    final avatarInitial = childName.isNotEmpty
+        ? childName.characters.first
+        : '미';
 
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: avatarColor,
           child: Text(
-            child != null && child.name.isNotEmpty
-                ? child.name.characters.first
-                : '미',
+            avatarInitial,
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
