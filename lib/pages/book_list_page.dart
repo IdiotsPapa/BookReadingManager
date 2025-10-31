@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -16,6 +20,57 @@ class _BookListPageState extends State<BookListPage> {
   late final Box<Book> _bookBox;
   late final Box<Child> _childBox;
   String? _selectedChildId;
+  static const List<_CsvColumn> _csvColumns = [
+    _CsvColumn(
+      key: 'title',
+      label: 'title',
+      description: '책 제목 (필수)',
+    ),
+    _CsvColumn(
+      key: 'author',
+      label: 'author',
+      description: '저자명 (필수)',
+    ),
+    _CsvColumn(
+      key: 'description',
+      label: 'description',
+      description: '책 설명 (선택)',
+    ),
+    _CsvColumn(
+      key: 'isbn',
+      label: 'isbn',
+      description: 'ISBN 번호 (선택)',
+    ),
+    _CsvColumn(
+      key: 'imageurl',
+      label: 'imageUrl',
+      description: '책 표지 이미지 URL (선택)',
+    ),
+    _CsvColumn(
+      key: 'readdate',
+      label: 'readDate',
+      description: '읽은 날짜 (yyyy-MM-dd, 선택)',
+    ),
+    _CsvColumn(
+      key: 'tags',
+      label: 'tags',
+      description: '태그 목록 (세미콜론 또는 쉼표로 구분, 선택)',
+    ),
+    _CsvColumn(
+      key: 'note',
+      label: 'note',
+      description: '메모 (선택)',
+    ),
+    _CsvColumn(
+      key: 'childname',
+      label: 'childName',
+      description: '연결할 자녀 이름 (선택, 기존 등록된 이름과 동일하게)',
+    ),
+  ];
+
+  static const String _csvSample =
+      'title,author,description,isbn,imageUrl,readDate,tags,note,childName\n'
+      '"플러터 완벽 가이드","홍길동","2장 읽기","9781234567890","https://example.com/cover.png","2025-01-01","코딩;학습","가족과 함께 읽기","민수"';
 
   @override
   void initState() {
@@ -30,6 +85,11 @@ class _BookListPageState extends State<BookListPage> {
       appBar: AppBar(
         title: const Text('내 서재'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file_outlined),
+            tooltip: 'CSV 업로드',
+            onPressed: _importFromCsv,
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: '책 등록',
@@ -263,4 +323,313 @@ class _BookListPageState extends State<BookListPage> {
       ),
     );
   }
+
+  Future<void> _importFromCsv() async {
+    if (!mounted) return;
+    final shouldPick = await _showCsvImportGuide();
+    if (shouldPick != true || !mounted) {
+      return;
+    }
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['csv'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+
+      final platformFile = result.files.single;
+      final bytes = platformFile.bytes;
+
+      if (bytes == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CSV 파일을 읽을 수 없습니다. 다시 시도해주세요.')),
+        );
+        return;
+      }
+
+      final csvString = utf8.decode(bytes);
+      final rows = const CsvToListConverter().convert(csvString);
+
+      if (rows.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CSV 파일에 데이터가 없습니다.')),
+        );
+        return;
+      }
+
+      final headersRaw = rows.first;
+      final normalizedHeaders = headersRaw
+          .map((cell) => _normalizeHeader(cell?.toString() ?? ''))
+          .toList();
+
+      final Map<String, int> headerIndex = {};
+      final List<String> missingHeaders = [];
+
+      for (final column in _csvColumns) {
+        final normalizedKey = _normalizeHeader(column.key);
+        final index = normalizedHeaders.indexOf(normalizedKey);
+        if (index == -1) {
+          missingHeaders.add(column.label);
+        } else {
+          headerIndex[column.key] = index;
+        }
+      }
+
+      if (missingHeaders.isNotEmpty) {
+        if (!mounted) return;
+        await _showImportIssues([
+          '다음 헤더가 누락되었습니다: ${missingHeaders.join(', ')}',
+          'CSV 첫 행에 올바른 헤더를 추가한 뒤 다시 시도해주세요.',
+        ]);
+        return;
+      }
+
+      final Map<String, Child> childLookup = {
+        for (final child in _childBox.values)
+          child.name.trim().toLowerCase(): child,
+      };
+
+      final List<String> issues = [];
+      int successCount = 0;
+      final totalRows = rows.length - 1;
+
+      for (var i = 1; i < rows.length; i++) {
+        final row = rows[i];
+
+        if (row.every((cell) => cell == null || cell.toString().trim().isEmpty)) {
+          continue;
+        }
+
+        String readCell(String key) {
+          final index = headerIndex[key];
+          if (index == null || index >= row.length) {
+            return '';
+          }
+          final value = row[index];
+          if (value == null) {
+            return '';
+          }
+          return value.toString().trim();
+        }
+
+        final title = readCell('title');
+        final author = readCell('author');
+
+        if (title.isEmpty || author.isEmpty) {
+          issues.add('${i + 1}행: 제목 또는 저자가 비어 있어 건너뜁니다.');
+          continue;
+        }
+
+        final description = readCell('description');
+        final isbn = readCell('isbn');
+        final imageUrl = readCell('imageurl');
+        final readDateRaw = readCell('readdate');
+        final tagsRaw = readCell('tags');
+        final note = readCell('note');
+        final childName = readCell('childname');
+
+        DateTime? readDate;
+        if (readDateRaw.isNotEmpty) {
+          try {
+            readDate = DateFormat('yyyy-MM-dd').parseStrict(readDateRaw);
+          } catch (_) {
+            issues.add('${i + 1}행: 읽은 날짜 "$readDateRaw" 형식을 해석할 수 없어 미적용됩니다. (yyyy-MM-dd)');
+          }
+        }
+
+        final tags = tagsRaw.isEmpty
+            ? <String>[]
+            : tagsRaw
+                .split(RegExp(r'[;,]'))
+                .map((tag) => tag.trim())
+                .where((tag) => tag.isNotEmpty)
+                .toList();
+
+        Child? child;
+        if (childName.isNotEmpty) {
+          child = childLookup[childName.toLowerCase()];
+          if (child == null) {
+            issues.add('${i + 1}행: 자녀 "$childName"을(를) 찾을 수 없어 미배정으로 저장됩니다.');
+          }
+        }
+
+        final isDuplicate = _bookBox.values.any((existing) =>
+            existing.title.trim().toLowerCase() == title.toLowerCase() &&
+            existing.author.trim().toLowerCase() == author.toLowerCase() &&
+            (existing.childId ?? '') == (child?.id ?? ''));
+
+        if (isDuplicate) {
+          issues.add('${i + 1}행: 동일한 제목/저자 조합이 이미 존재하여 건너뜁니다.');
+          continue;
+        }
+
+        final newBook = Book(
+          title: title,
+          author: author,
+          description: description,
+          isbn: isbn.isEmpty ? null : isbn,
+          imageUrl: imageUrl.isEmpty ? null : imageUrl,
+          readDate: readDate,
+          tags: tags,
+          note: note.isNotEmpty ? note : null,
+          childId: child?.id,
+        );
+
+        await _bookBox.add(newBook);
+        successCount++;
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV 업로드 완료: 총 $totalRows건 중 $successCount건 추가되었습니다.'),
+        ),
+      );
+
+      if (issues.isNotEmpty) {
+        await _showImportIssues(issues);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV 처리 중 오류가 발생했습니다: $error'),
+        ),
+      );
+    }
+  }
+
+  Future<bool?> _showCsvImportGuide() {
+    return showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'CSV 업로드 안내',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('• 첫 번째 행에는 아래 헤더 이름을 그대로 입력해주세요.'),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _csvColumns
+                        .map(
+                          (column) => Chip(
+                            label: Text(column.label),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('• 각 열 설명'),
+                  const SizedBox(height: 8),
+                  ..._csvColumns.map(
+                    (column) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text('· ${column.label}: ${column.description}'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('• 태그는 세미콜론(;) 또는 쉼표(,)로 구분할 수 있으며, CSV 인코딩은 UTF-8을 권장합니다.'),
+                  const SizedBox(height: 16),
+                  const Text('예시'),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: const SelectableText(_csvSample),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('취소'),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('파일 선택'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showImportIssues(List<String> messages) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('업로드 결과 안내'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: messages.length,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Text(messages[index]),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('닫기'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _normalizeHeader(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\s_-]'), '');
+  }
+}
+
+class _CsvColumn {
+  const _CsvColumn({
+    required this.key,
+    required this.label,
+    required this.description,
+  });
+
+  final String key;
+  final String label;
+  final String description;
 }
