@@ -29,13 +29,14 @@ class BookAdapter extends TypeAdapter<Book> {
       note: fields[9] as String?,
       createdAt: fields[10] as DateTime?,
       updatedAt: fields[11] as DateTime?,
+      childId: fields[12] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Book obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class BookAdapter extends TypeAdapter<Book> {
       ..writeByte(10)
       ..write(obj.createdAt)
       ..writeByte(11)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(12)
+      ..write(obj.childId);
   }
 
   @override

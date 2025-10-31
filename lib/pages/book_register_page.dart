@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import '../models/book.dart';
+import '../models/child.dart';
 
 class BookRegisterPage extends StatefulWidget {
   const BookRegisterPage({Key? key}) : super(key: key);
@@ -21,6 +23,14 @@ class _BookRegisterPageState extends State<BookRegisterPage> {
   final _noteController = TextEditingController();
 
   DateTime? _selectedDate;
+  String? _selectedChildId;
+  late final Box<Child> _childBox;
+
+  @override
+  void initState() {
+    super.initState();
+    _childBox = Hive.box<Child>('children');
+  }
 
   Future<void> _saveBook() async {
     if (_formKey.currentState!.validate()) {
@@ -41,6 +51,7 @@ class _BookRegisterPageState extends State<BookRegisterPage> {
             ? _tagsController.text.split(',').map((tag) => tag.trim()).toList()
             : [],
         note: _noteController.text.trim(),
+        childId: _selectedChildId,
       );
 
       await box.add(newBook);
@@ -100,6 +111,7 @@ class _BookRegisterPageState extends State<BookRegisterPage> {
               _buildTextField(
                   _descriptionController, '설명', '책에 대한 간단한 설명을 입력하세요',
                   maxLines: 3),
+              _buildChildSelector(),
               _buildTextField(_isbnController, 'ISBN', 'ISBN 번호를 입력하세요'),
               _buildTextField(
                   _imageUrlController, '이미지 URL', '책 표지 이미지 URL을 입력하세요'),
@@ -143,6 +155,63 @@ class _BookRegisterPageState extends State<BookRegisterPage> {
             return '$label을(를) 입력해주세요.';
           }
           return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildChildSelector() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: ValueListenableBuilder(
+        valueListenable: _childBox.listenable(),
+        builder: (context, Box<Child> box, _) {
+          final children = box.values.toList(growable: false);
+
+          if (children.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.indigo.shade100),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                '연결할 자녀가 없습니다. 자녀 탭에서 먼저 프로필을 등록해주세요.',
+                style: TextStyle(color: Colors.black87),
+              ),
+            );
+          }
+
+          final selectedValue = children.any((child) => child.id == _selectedChildId)
+              ? _selectedChildId
+              : null;
+
+          return DropdownButtonFormField<String>(
+            value: selectedValue,
+            decoration: const InputDecoration(
+              labelText: '독서를 관리할 자녀 선택',
+              border: OutlineInputBorder(),
+            ),
+            items: children
+                .map(
+                  (child) => DropdownMenuItem(
+                    value: child.id,
+                    child: Text(child.name),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedChildId = value;
+              });
+            },
+            validator: (value) {
+              if (children.isNotEmpty && value == null) {
+                return '자녀를 선택해주세요.';
+              }
+              return null;
+            },
+          );
         },
       ),
     );

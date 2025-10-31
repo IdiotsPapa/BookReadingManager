@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/book.dart';
+import 'models/child.dart';
+import 'models/reading_plan.dart';
 import 'pages/book_page.dart';
 import 'pages/history_page.dart';
 import 'pages/home_page.dart';
 import 'pages/plan_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/child_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
-  Hive.registerAdapter(BookAdapter()); // g.dart에서 생성된 Adapter
+  Hive.registerAdapter(BookAdapter());
+  Hive.registerAdapter(ChildAdapter());
+  Hive.registerAdapter(ReadingPlanAdapter());
+
   await Hive.openBox<Book>('books');
+  await Hive.openBox<Child>('children');
+  await Hive.openBox<ReadingPlan>('plans');
 
   runApp(const MyApp());
 }
@@ -41,10 +49,11 @@ class MainTabView extends StatefulWidget {
 class _MainTabViewState extends State<MainTabView> {
   int _currentIndex = 0;
 
-  final List<String> _pageTitles = const ['홈', '책', '계획', '기록', '프로필'];
+  final List<String> _pageTitles = const ['홈', '자녀', '책', '계획', '기록', '프로필'];
 
   final List<Widget> _pages = const [
     HomePage(),
+    ChildPage(),
     BookPage(),
     PlanPage(),
     HistoryPage(),
@@ -74,6 +83,10 @@ class _MainTabViewState extends State<MainTabView> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: '홈',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.family_restroom_outlined),
+            label: '자녀',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.menu_book_outlined),

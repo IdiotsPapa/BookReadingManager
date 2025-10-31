@@ -55,6 +55,10 @@ class Book extends HiveObject {
   @HiveField(11)
   DateTime? updatedAt;
 
+  /// 책을 읽은 자녀 식별자 (부모 - 자녀 매핑 용도)
+  @HiveField(12)
+  String? childId;
+
   Book({
     required this.title,
     required this.author,
@@ -68,5 +72,6 @@ class Book extends HiveObject {
     this.note,
     DateTime? createdAt,
     this.updatedAt,
+    this.childId,
   }) : createdAt = createdAt ?? DateTime.now();
 }
