@@ -1,3 +1,4 @@
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -377,7 +378,7 @@ class _HistoryCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('자녀: ${child?.name ?? '미배정'}'),
+            Text('자녀: ${childName.isNotEmpty ? childName : '미배정'}'),
             Text('읽은 날짜: $readDate'),
             if (book.note != null && book.note!.isNotEmpty)
               Text('메모: ${book.note!}', maxLines: 2, overflow: TextOverflow.ellipsis),

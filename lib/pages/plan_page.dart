@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -161,7 +162,7 @@ class _PlanPageState extends State<PlanPage> {
     final noteController = TextEditingController(text: plan?.note ?? '');
     var progress = plan?.progress ?? 0.0;
     var targetDate = plan?.targetDate;
-    var selectedChildId = plan?.childId ?? _selectedChildId ?? children.first.id;
+    String selectedChildId = plan?.childId ?? _selectedChildId ?? children.first.id;
 
     final formKey = GlobalKey<FormState>();
 
@@ -207,11 +208,8 @@ class _PlanPageState extends State<PlanPage> {
                             )
                             .toList(),
                         onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
                           setSheetState(() {
-                            selectedChildId = value;
+                            selectedChildId = value ?? selectedChildId;
                           });
                         },
                       ),
