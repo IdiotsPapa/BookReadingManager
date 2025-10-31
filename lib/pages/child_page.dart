@@ -21,6 +21,7 @@ class _ChildPageState extends State<ChildPage> {
   late final Box<Book> _bookBox;
   late final Box<ReadingPlan> _planBox;
   static const _parentId = 'primary-parent';
+  final Random _idRandom = Random();
 
   final List<Color> _avatarColors = const [
     Color(0xFF6C63FF),
@@ -324,9 +325,8 @@ class _ChildPageState extends State<ChildPage> {
   }
 
   String _generateId() {
-    final random = Random();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final randomSuffix = random.nextInt(1 << 32);
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    final randomSuffix = _idRandom.nextInt(900000) + 100000; // 6자리 난수
     return 'child-$timestamp-$randomSuffix';
   }
 }
