@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:csv/csv.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -332,28 +332,21 @@ class _BookListPageState extends State<BookListPage> {
     }
 
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['csv'],
-        withData: true,
-      );
+      final typeGroup = XTypeGroup(label: 'CSV', extensions: const ['csv']);
+      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
 
-      if (result == null || result.files.isEmpty) {
+      if (file == null) {
         return;
       }
 
-      final platformFile = result.files.single;
-      final bytes = platformFile.bytes;
-
-      if (bytes == null) {
+      final csvString = await file.readAsString();
+      if (csvString.trim().isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('CSV 파일을 읽을 수 없습니다. 다시 시도해주세요.')),
         );
         return;
       }
-
-      final csvString = utf8.decode(bytes);
       final rows = const CsvToListConverter().convert(csvString);
 
       if (rows.isEmpty) {
